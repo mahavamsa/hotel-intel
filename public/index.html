@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hotel Acquisition Intelligence</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22253a;
+    --border: #2e3250;
+    --accent: #4f6ef7;
+    --accent-hover: #6b87ff;
+    --text: #e8eaf6;
+    --text-muted: #7b82b4;
+    --green: #34d399;
+    --yellow: #fbbf24;
+    --red: #f87171;
+    --radius: 10px;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px 16px 60px;
+  }
+
+  .container { max-width: 860px; margin: 0 auto; }
+
+  /* ── Header ── */
+  .header { text-align: center; padding: 40px 0 32px; }
+  .header h1 {
+    font-size: 28px; font-weight: 700; letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #a5b4fc, #4f6ef7);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .header p { color: var(--text-muted); margin-top: 8px; font-size: 14px; }
+
+  /* ── Form ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 24px;
+  }
+
+  .form-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 200px; }
+  label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
+
+  input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+  input:focus { border-color: var(--accent); }
+  input::placeholder { color: var(--text-muted); opacity: 0.6; }
+
+  button {
+    border: none; cursor: pointer; font-weight: 600; font-size: 15px;
+    border-radius: 8px; transition: background 0.15s, transform 0.1s;
+  }
+  button:active { transform: scale(0.98); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    padding: 11px 28px;
+    white-space: nowrap;
+    align-self: flex-end;
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* ── Status bar ── */
+  .status-bar {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+  .status-bar.visible { display: flex; }
+  .spinner {
+    width: 16px; height: 16px; flex-shrink: 0;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Report output ── */
+  .report-wrapper {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .report-wrapper.visible { display: block; }
+
+  .report-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .report-toolbar span { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+
+  .btn-copy {
+    background: var(--surface);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    font-size: 13px;
+    border-radius: 6px;
+  }
+  .btn-copy:hover { color: var(--text); border-color: var(--accent); }
+  .btn-copy.copied { color: var(--green); border-color: var(--green); }
+
+  .report-body { padding: 28px 32px; }
+
+  /* ── Markdown styles ── */
+  .report-body h1 {
+    font-size: 22px; font-weight: 700; margin-bottom: 20px;
+    color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 12px;
+  }
+  .report-body h2 {
+    font-size: 16px; font-weight: 700; margin: 28px 0 12px;
+    color: #a5b4fc; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .report-body h3 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--text); }
+  .report-body p { font-size: 14px; line-height: 1.7; margin-bottom: 12px; color: #c7cbe8; }
+  .report-body ul { padding-left: 20px; margin-bottom: 12px; }
+  .report-body li { font-size: 14px; line-height: 1.7; margin-bottom: 4px; color: #c7cbe8; }
+  .report-body ol { padding-left: 20px; margin-bottom: 12px; }
+  .report-body ol li { font-size: 14px; line-height: 1.7; margin-bottom: 10px; color: #c7cbe8; }
+  .report-body strong { color: var(--text); font-weight: 600; }
+  .report-body em { color: var(--text-muted); font-style: normal; font-size: 13px; }
+  .report-body a { color: var(--accent-hover); text-decoration: none; }
+  .report-body a:hover { text-decoration: underline; }
+  .report-body hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+  .report-body blockquote {
+    border-left: 3px solid var(--border);
+    padding: 8px 16px;
+    color: var(--text-muted);
+    font-size: 13px;
+    margin: 12px 0;
+    background: var(--surface2);
+    border-radius: 0 6px 6px 0;
+  }
+
+  /* ── Tables ── */
+  .report-body table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 13px; }
+  .report-body th {
+    background: var(--surface2);
+    color: var(--text-muted);
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--border);
+  }
+  .report-body td {
+    padding: 9px 12px; border-bottom: 1px solid var(--border);
+    color: #c7cbe8; vertical-align: top;
+  }
+  .report-body tr:last-child td { border-bottom: none; }
+  .report-body tr:hover td { background: var(--surface2); }
+
+  /* ── Error ── */
+  .error-box {
+    display: none;
+    background: rgba(248, 113, 113, 0.08);
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    color: var(--red);
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+  .error-box.visible { display: block; }
+
+  @media (max-width: 600px) {
+    .form-row { flex-direction: column; }
+    .btn-primary { width: 100%; }
+    .report-body { padding: 20px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header class="header">
+    <h1>Hotel Acquisition Intelligence</h1>
+    <p>Live data from Google Maps · Google Hotels · TripAdvisor · Booking.com</p>
+  </header>
+
+  <div class="card">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="hotel">Hotel Name</label>
+        <input id="hotel" type="text" placeholder="e.g. Marriott Grand" autocomplete="off" />
+      </div>
+      <div class="form-group">
+        <label for="city">City</label>
+        <input id="city" type="text" placeholder="e.g. Bangkok" autocomplete="off" />
+      </div>
+      <button class="btn-primary" id="run-btn" onclick="runReport()">Generate Report</button>
+    </div>
+  </div>
+
+  <div class="error-box" id="error-box"></div>
+
+  <div class="status-bar" id="status-bar">
+    <div class="spinner"></div>
+    <span id="status-text">Initialising…</span>
+  </div>
+
+  <div class="report-wrapper" id="report-wrapper">
+    <div class="report-toolbar">
+      <span id="report-label">Acquisition Intelligence Report</span>
+      <button class="btn-copy" id="copy-btn" onclick="copyReport()">Copy Markdown</button>
+    </div>
+    <div class="report-body" id="report-body"></div>
+  </div>
+
+</div>
+
+<script>
+  let rawMarkdown = ''
+  let currentSSE  = null
+
+  function setStatus(msg) {
+    document.getElementById('status-text').textContent = msg
+  }
+
+  function showStatus(visible) {
+    document.getElementById('status-bar').classList.toggle('visible', visible)
+  }
+
+  function showReport(visible) {
+    document.getElementById('report-wrapper').classList.toggle('visible', visible)
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error-box')
+    el.textContent = msg
+    el.classList.toggle('visible', !!msg)
+  }
+
+  function renderMarkdown() {
+    document.getElementById('report-body').innerHTML = marked.parse(rawMarkdown)
+  }
+
+  async function runReport() {
+    const hotel = document.getElementById('hotel').value.trim()
+    const city  = document.getElementById('city').value.trim()
+
+    if (!hotel) { showError('Please enter a hotel name.'); return }
+
+    // Reset UI
+    showError('')
+    showReport(false)
+    showStatus(true)
+    setStatus('Connecting…')
+    rawMarkdown = ''
+    document.getElementById('report-body').innerHTML = ''
+    document.getElementById('copy-btn').textContent = 'Copy Markdown'
+    document.getElementById('copy-btn').classList.remove('copied')
+    document.getElementById('run-btn').disabled = true
+
+    const label = city ? `${hotel} · ${city}` : hotel
+    document.getElementById('report-label').textContent = label
+
+    if (currentSSE) { currentSSE.close(); currentSSE = null }
+
+    const url = `/report?hotel=${encodeURIComponent(hotel)}&city=${encodeURIComponent(city)}`
+    const sse = new EventSource(url)
+    currentSSE = sse
+
+    sse.addEventListener('status', (e) => {
+      const { message } = JSON.parse(e.data)
+      setStatus(message)
+    })
+
+    sse.addEventListener('chunk', (e) => {
+      const { text } = JSON.parse(e.data)
+      rawMarkdown += text
+      showReport(true)
+      renderMarkdown()
+      // auto-scroll
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
+    })
+
+    sse.addEventListener('done', () => {
+      sse.close()
+      currentSSE = null
+      showStatus(false)
+      document.getElementById('run-btn').disabled = false
+    })
+
+    sse.addEventListener('error', (e) => {
+      try {
+        const { message } = JSON.parse(e.data)
+        showError(`Error: ${message}`)
+      } catch {
+        if (sse.readyState === EventSource.CLOSED) {
+          showError('Connection closed unexpectedly. Check your SearchApi key and try again.')
+        }
+      }
+      sse.close()
+      currentSSE = null
+      showStatus(false)
+      document.getElementById('run-btn').disabled = false
+    })
+  }
+
+  function copyReport() {
+    if (!rawMarkdown) return
+    navigator.clipboard.writeText(rawMarkdown).then(() => {
+      const btn = document.getElementById('copy-btn')
+      btn.textContent = 'Copied!'
+      btn.classList.add('copied')
+      setTimeout(() => {
+        btn.textContent = 'Copy Markdown'
+        btn.classList.remove('copied')
+      }, 2000)
+    })
+  }
+
+  // Allow Enter key on inputs
+  ['hotel', 'city'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') runReport()
+    })
+  })
+</script>
+
+</body>
+</html>
